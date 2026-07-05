@@ -144,7 +144,7 @@ class CursedTimer:
     def end_timer(self):
         self.telemetry.show_final_stats(self.remaining_time)
         print("[GAME OVER] Timer hit 0 or went negative.")
-        self.label.config(text="00:00\nDone!", fg=config.DONE_COLOR)
+        self.label.config(text=format_time(self.remaining_time) + "\nDone!", fg=config.DONE_COLOR)
         self.resize_text()
 
     def run(self):
