@@ -6,6 +6,7 @@ from telemetry import TimerTelemetry
 from time_utils import format_time
 from event_registry import EVENT_CATEGORIES
 from settings.main_settings import SettingsWindow
+from engines.truly_random import TrulyRandomEngine
 
 class CursedTimer:
     def __init__(self, duration_seconds):
@@ -44,6 +45,8 @@ class CursedTimer:
         self.current_delay = config.DEFAULT_TICK_DELAY_MS
         self.timer_id = None
         self.telemetry = TimerTelemetry(duration_seconds)
+
+        self.engine = globals()[config.DEFAULT_ENGINE]()
         
         self.categories = EVENT_CATEGORIES
         
@@ -123,22 +126,7 @@ class CursedTimer:
             self.end_timer()
             return
 
-        # Roll for events
-        cat_weights = [config.CHANCE_INCREASING, config.CHANCE_NEUTRAL, config.CHANCE_DECREASING]
-        chosen_category = random.choices(list(self.categories.keys()), weights=cat_weights, k=1)[0]
-        event_dict = self.categories[chosen_category]
-        
-        skip_countdown = False
-        event_name = "None"
-        
-        if event_dict:
-            event_pool, event_weights = list(event_dict.keys()), list(event_dict.values())
-            chosen_event = random.choices(event_pool, weights=event_weights, k=1)[0]
-            event_name = chosen_event.__name__.split('.')[-1]
-            skip_countdown = chosen_event.trigger(self)
-        
-        if not skip_countdown:
-            self.remaining_time -= 1
+        chosen_category, event_name = self.engine.process_tick(self)
 
         # Update telemetry
         self.telemetry.log_tick(chosen_category, event_name, self.remaining_time, self.current_delay)
