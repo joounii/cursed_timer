@@ -5,6 +5,7 @@ import tkinter.font as tkfont
 from telemetry import TimerTelemetry
 from time_utils import format_time
 from event_registry import EVENT_CATEGORIES
+from settings.main_settings import SettingsWindow
 
 class CursedTimer:
     def __init__(self, duration_seconds):
@@ -28,10 +29,15 @@ class CursedTimer:
         
         self.resize_margin = 15
         self.is_resizing = False
+        
+        # Keep track of the settings window instance
+        self.settings_window = None 
+
         self.label.bind("<Motion>", self.check_cursor_zone)
         self.label.bind("<Button-1>", self.start_drag_or_resize)
         self.label.bind("<B1-Motion>", self.do_drag_or_resize)
-        self.root.bind("<Button-3>", lambda e: self.root.destroy())
+
+        self.root.bind("<Button-3>", self.open_settings)
         self.root.bind("<Configure>", self.resize_text)
 
         self.remaining_time = duration_seconds
@@ -100,6 +106,13 @@ class CursedTimer:
         
         self.dynamic_font.config(size=max(8, new_size))
 
+    def open_settings(self, event=None):
+        """Spawns the settings window if it isn't already open."""
+        if self.settings_window is None or not self.settings_window.winfo_exists():
+            self.settings_window = SettingsWindow(self.root, self)
+        else:
+            self.settings_window.lift()
+
     # --- Core Timer Logic ---
 
     def update_timer(self):
@@ -140,6 +153,27 @@ class CursedTimer:
             execution_delay = max(5, int(self.current_delay / config.DEBUG_SPEED_MULTIPLIER))
             
         self.timer_id = self.root.after(execution_delay, self.update_timer)
+        
+    def reset_timer(self):
+        """Called by the settings window to restart the chaos."""
+        if self.timer_id:
+            self.root.after_cancel(self.timer_id)
+            self.timer_id = None
+            
+        self.remaining_time = config.DEFAULT_START_TIME
+        self.current_delay = config.DEFAULT_TICK_DELAY_MS
+        
+        self.label.config(
+            text=format_time(self.remaining_time), 
+            fg=config.TEXT_COLOR, 
+            bg=config.BG_COLOR
+        )
+        self.resize_text()
+        
+        self.telemetry = TimerTelemetry(self.remaining_time)
+        
+        print("[GAME RESET] Timer restarted. Waiting 1 second for first tick...")
+        self.timer_id = self.root.after(1000, self.update_timer)
 
     def end_timer(self):
         self.telemetry.show_final_stats(self.remaining_time)
