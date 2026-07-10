@@ -173,8 +173,19 @@ class CursedTimer:
     def run(self):
         self.root.mainloop()
 
-    def fire_popup(self, text, color="#ffffff", duration=750):
-        create_floating_popup(self.root, text, color, duration)
+    def fire_popup(self, text, color="#ffffff", duration=None):
+        if duration is None:
+            duration = int(self.current_delay * 0.8)
+            
+        duration = min(duration, 1500)
+        
+        if config.DEBUG_MODE:
+            duration = max(10, int(duration / config.DEBUG_SPEED_MULTIPLIER))
+            
+        current_font_size = self.dynamic_font.cget("size")
+        popup_size = max(10, int(current_font_size * 0.3))
+        
+        create_floating_popup(self.root, text, color, duration, popup_size)
 
 if __name__ == "__main__":
     timer = CursedTimer(config.DEFAULT_START_TIME)
