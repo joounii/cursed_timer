@@ -7,6 +7,7 @@ from time_utils import format_time
 from event_registry import EVENT_CATEGORIES
 from settings.main_settings import SettingsWindow
 from engines.truly_random import TrulyRandomEngine
+from ui.popup import create_floating_popup
 
 class CursedTimer:
     def __init__(self, duration_seconds):
@@ -171,6 +172,9 @@ class CursedTimer:
 
     def run(self):
         self.root.mainloop()
+
+    def fire_popup(self, text, color="#ffffff", duration=750):
+        create_floating_popup(self.root, text, color, duration)
 
 if __name__ == "__main__":
     timer = CursedTimer(config.DEFAULT_START_TIME)
